@@ -2,7 +2,8 @@ name: PR Security Scan
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 jobs:
   security-scan:

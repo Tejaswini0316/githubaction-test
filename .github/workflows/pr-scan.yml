@@ -1,0 +1,37 @@
+name: PR Security Scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      # --- Checkout ---
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      # --- Trivy Secret Scan ---
+      - name: Run Trivy secret scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scanners: secret
+          exit-code: '1'          # fail if secrets found
+          hide-progress: true
+          severity: CRITICAL,HIGH
+          format: table
+          path: "."
+
+      # --- TruffleHog Git Diff Scan ---
+      - name: Run TruffleHog on PR commits
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: "."
+          base: "main"   # target branch
+          head: ${{ github.event.pull_request.head.ref }}
+          extra_args: --results=verified,unknown --fail
